@@ -1,11 +1,10 @@
 import streamlit as st
-import tensorflow as tf
-from tensorflow.keras.models import load_model
 import numpy as np
 from PIL import Image, ImageOps
+import joblib  # Changed from TensorFlow imports
 
-# Load the trained model
-model = load_model('mnist_sklearn_model.h5')
+# Load the trained scikit-learn model
+model = joblib.load('mnist_sklearn_model.pkl')  # Changed to joblib
 
 # Define a function to preprocess the uploaded image
 def preprocess_image(image):
@@ -58,9 +57,8 @@ if uploaded_file is not None:
     # Preprocess the image for the model
     processed_image = preprocess_image(image)
     
-    # Predict the digit
-    prediction = model.predict(processed_image)
-    predicted_digit = np.argmax(prediction)
+    # Predict the digit (modified for scikit-learn)
+    predicted_digit = model.predict(processed_image)[0]  # Direct class prediction
     
     # Display the predicted digit
     st.write(f"**Chiffre prédit:** {predicted_digit}")
