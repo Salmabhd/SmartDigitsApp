@@ -1,86 +1,91 @@
 import streamlit as st
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 import numpy as np
 from PIL import Image, ImageOps
-import joblib
 
-# Charger le modèle scikit-learn
-try:
-    model = joblib.load('mnist_sklearn_model.h5')
-except Exception as e:
-    st.error(f"Erreur de chargement du modèle: {str(e)}")
-    st.stop()
+# Chargement du modèle entraîné
+model = load_model('mnist_model.h5')
 
 # Fonction de prétraitement de l'image
-def preprocess_image(image):
-    image = ImageOps.grayscale(image)
-    image = image.resize((28, 28))
-    image = np.array(image)
-    image = image.reshape(1, 28 * 28).astype('float32')
-    image /= 255.0
+def pretraiter_image(image):
+    image = ImageOps.grayscale(image)          # Conversion en niveaux de gris
+    image = image.resize((28, 28))              # Redimensionnement à 28x28
+    image = np.array(image)                     # Conversion en tableau numpy
+    image = image.reshape(1, 28 * 28).astype('float32')  # Mise en forme pour le modèle
+    image /= 255.0                              # Normalisation
     return image
 
-# Barre latérale
-st.sidebar.title("Bienvenue sur Dashboard")
-st.sidebar.image('Profile Photo.png', use_column_width=True, caption="")
-st.sidebar.write("**AI & Machine Learning **")
+# Personnalisation du style (couleurs)
+st.markdown("""
+    <style>
+        body {
+            background-color: #ebd7ff;
+            color: #6600c7;
+        }
+        .stApp {
+            background-color: #ebd7ff;
+        }
+        h1, h2, h3, h4, h5, h6, .css-10trblm {
+            color: #6600c7;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
+# Barre latérale de navigation
+st.sidebar.title("Bienvenue sur notre Dashboard")
+
+# Image et profil
+st.sidebar.image('CoreDuo.png', use_column_width=True, caption="Salma & Partenaire")
+st.sidebar.write("**Spécialistes en Intelligence Artificielle**")
+
+# À propos du modèle
 st.sidebar.header("À propos du modèle")
 st.sidebar.write("""
-    Modèle de classification de chiffres MNIST utilisant scikit-learn.
-    
-    **Détails techniques:**
-    - **Type:** Classificateur scikit-learn
-    - **Algorithme:** Random Forest
-    - **Nombre d'estimateurs:** 100 arbres
-    - **Précision:** 97% (sur jeu de test)
-    - **Entraîné sur:** 60 000 échantillons
+Ce modèle de reconnaissance de chiffres manuscrits est un réseau de neurones conçu pour classer les chiffres de 0 à 9, basé sur le célèbre jeu de données MNIST.
+
+**Détails du modèle :**
+- **Type :** Réseau de neurones multicouches (Feedforward)
+- **Architecture :** 2 couches cachées
+- **Fonctions d'activation :** ReLU (couches cachées), Softmax (sortie)
+- **Époques d'entraînement :** 15
+- **Taille de lot (batch size) :** 200
 """)
 
-st.sidebar.header("Coordonnées")
-st.sidebar.write("Contactez-nous via :")
-st.sidebar.write("[LinkedIn](https://www.linkedin.com/in//)")
-st.sidebar.write("[GitHub](https://github.com//)")
-st.sidebar.write("[Email](@gmail.com)")
+# À propos de nous
+st.sidebar.header("À propos de nous")
+st.sidebar.write("Nous sommes l’équipe CoreDuo, dédiée au développement de modèles en Machine Learning.")
 
-# Interface principale
-st.title("SmartDigits - Reconnaissance de Chiffres")
-st.write("Téléchargez une image de chiffre manuscrit (28x28 pixels)")
+# Coordonnées de contact
+st.sidebar.header("Contact")
+st.sidebar.write("N'hésitez pas à nous contacter via ces plateformes :")
+st.sidebar.write("[LinkedIn](https://www.linkedin.com/in/)")
+st.sidebar.write("[GitHub](https://github.com/SalmaBhd/)")
+st.sidebar.write("[Email](mailto:babahdisalma@gmail.com)")
 
-uploaded_file = st.file_uploader("Choisir une image...", type=["png", "jpg", "jpeg"])
+# Section principale
+st.title("Reconnaissance de Chiffres Manuscrits - MNIST")
 
-if uploaded_file is not None:
-    try:
-        image = Image.open(uploaded_file)
-        st.image(image, caption='Image téléchargée', use_column_width=True)
-        
-        processed_image = preprocess_image(image)
-        
-        # Prédiction avec gestion d'erreur
-        try:
-            prediction = model.predict(processed_image)
-            proba = model.predict_proba(processed_image)
-            
-            st.subheader("Résultat de l'analyse")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Chiffre identifié", prediction[0])
-            with col2:
-                st.metric("Confiance", f"{proba[0].max()*100:.1f}%")
-            
-            st.bar_chart({
-                "Probabilités": proba[0]
-            })
-            
-        except Exception as e:
-            st.error(f"Erreur lors de la prédiction: {str(e)}")
-            
-    except Exception as e:
-        st.error(f"Erreur de traitement d'image: {str(e)}")
+st.write("Téléchargez une image contenant un chiffre pour que le modèle puisse le reconnaître.")
 
-if st.button('Afficher les détails'):
-    if uploaded_file is not None:
-        st.write("Caractéristiques du modèle chargé:")
-        st.write(f"- Type: {type(model).__name__}")
-        st.write(f"- Paramètres: {model.get_params()}")
+# Téléversement de fichier
+fichier = st.file_uploader("Choisissez une image PNG...", type="png")
+
+if fichier is not None:
+    image = Image.open(fichier)
+    st.image(image, caption="Image téléchargée", use_column_width=True)
+
+    # Prétraitement et prédiction
+    image_pretraitee = pretraiter_image(image)
+    prediction = model.predict(image_pretraitee)
+    chiffre_pred = np.argmax(prediction)
+
+    # Affichage du résultat
+    st.write(f"**Chiffre prédit :** {chiffre_pred}")
+
+# Bouton de prédiction
+if st.button("Prédire"):
+    if fichier is not None:
+        st.write("Prédiction effectuée avec succès.")
     else:
-        st.warning("Veuillez d'abord charger une image")
+        st.write("Veuillez d'abord téléverser une image.")
